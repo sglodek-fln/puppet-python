@@ -52,6 +52,9 @@ define python::virtualenv (
   $virtualenv       = undef
 ) {
   include ::python
+
+  $python_version = getparam(Class['python'], 'version')
+
   $python_provider = getparam(Class['python'], 'provider')
   $anaconda_path = getparam(Class['python'], 'anaconda_install_path')
 
@@ -133,8 +136,16 @@ define python::virtualenv (
     $pip_cmd   = "${python::exec_prefix}${venv_dir}/bin/pip"
     $pip_flags = "${pypi_index} ${proxy_flag} ${pip_args}"
 
+    if "${python_version}" =~ /^python3/ { #lint:ignore:only_variable_string
+      $pip_install_cmd = "true ${proxy_command} && ${virtualenv_cmd} ${system_pkgs_flag} -p ${python} ${venv_dir} && ${pip_cmd} --log ${venv_dir}/pip.log install ${pip_flags} --upgrade pip && ${pip_cmd} install ${pip_flags} --upgrade ${distribute_pkg}"
+    } else {
+      $py2_distribute_pkg = "'setuptools==44.1.0' 'distribute==0.7.3' 'wheel==0.36.2'"
+
+      $pip_install_cmd = "true ${proxy_command} && ${virtualenv_cmd} ${system_pkgs_flag} -p ${python} ${venv_dir} && ${pip_cmd} --log ${venv_dir}/pip.log install ${pip_flags} --upgrade 'pip<21' && ${pip_cmd} install ${pip_flags} --upgrade ${py2_distribute_pkg}"
+    }
+
     exec { "python_virtualenv_${venv_dir}":
-      command     => "true ${proxy_command} && ${virtualenv_cmd} ${system_pkgs_flag} -p ${python} ${venv_dir} && ${pip_cmd} --log ${venv_dir}/pip.log install ${pip_flags} --upgrade pip && ${pip_cmd} install ${pip_flags} --upgrade ${distribute_pkg}",
+      command     => $pip_install_cmd,
       user        => $owner,
       creates     => "${venv_dir}/bin/activate",
       path        => $_path,
