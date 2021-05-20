@@ -134,7 +134,7 @@ define python::virtualenv (
     $pip_cmd   = "${python::exec_prefix}${venv_dir}/bin/pip"
     $pip_flags = "${pypi_index} ${proxy_flag} ${pip_args}"
 
-    if $version =~ /3.*/ { #lint:ignore:only_variable_string
+    if "${version}" =~ /3.*/ { #lint:ignore:only_variable_string
       $pip_install_cmd = "true ${proxy_command} && ${virtualenv_cmd} ${system_pkgs_flag} -p ${python} ${venv_dir} && ${pip_cmd} --log ${venv_dir}/pip.log install ${pip_flags} --upgrade pip && ${pip_cmd} install ${pip_flags} --upgrade ${distribute_pkg}"
     } else {
       $py2_distribute_pkg = "'setuptools==44.1.0' 'distribute==0.7.3' 'wheel==0.36.2'"
